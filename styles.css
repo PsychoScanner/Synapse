@@ -1,0 +1,175 @@
+/* ========== CSS GLOBAL ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Orbitron', sans-serif;
+    background-color: #030303;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ========== TYPOGRAPHY ========== */
+.tech-mono { 
+    font-family: 'Share Tech Mono', 'Orbitron', monospace; 
+}
+
+/* ========== NEON EFFECTS ========== */
+.neon-glow-cyan { 
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); 
+    border: 1px solid rgba(0, 255, 204, 0.4); 
+}
+
+.neon-glow-red { 
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.2); 
+    border: 1px solid rgba(255, 51, 102, 0.4); 
+}
+
+.neon-text-green { 
+    color: #deff9a; 
+    text-shadow: 0 0 10px rgba(222, 255, 154, 0.6); 
+}
+
+.neon-text-red { 
+    color: #ff3366; 
+    text-shadow: 0 0 10px rgba(255, 51, 102, 0.6); 
+}
+
+/* ========== PAGE NAVIGATION ========== */
+.page { 
+    display: none; 
+    height: 100%; 
+    flex-direction: column; 
+}
+
+.page.active { 
+    display: flex; 
+}
+
+/* ========== FORM ELEMENTS ========== */
+input, textarea, select {
+    background: rgba(15, 15, 15, 0.9) !important;
+    border: 1px solid #333 !important;
+    color: #deff9a !important;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.3s ease;
+}
+
+input::placeholder, textarea::placeholder {
+    color: rgba(222, 255, 154, 0.5) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #00ffcc !important; 
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5) !important;
+    background: rgba(0, 255, 204, 0.05) !important;
+}
+
+option { 
+    background-color: #111; 
+    color: #00ffcc; 
+}
+
+/* ========== CANVAS ========== */
+canvas { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 0; 
+    pointer-events: none; 
+}
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar-container { 
+    width: 100%; 
+    background-color: #1a1a1a; 
+    border-radius: 10px; 
+    overflow: hidden; 
+    height: 8px; 
+    margin-top: 8px; 
+    border: 1px solid rgba(0, 255, 204, 0.2);
+}
+
+.progress-bar { 
+    height: 100%; 
+    width: 0%; 
+    background: linear-gradient(90deg, #00ffcc, #ff3366); 
+    transition: width 1.5s ease-out; 
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+}
+
+/* ========== BUTTONS ========== */
+button {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 204, 0.3);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 204, 0.6);
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
+    }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+    }
+    
+    .page {
+        padding: 1rem;
+    }
+}
