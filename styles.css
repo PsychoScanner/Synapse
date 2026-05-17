@@ -1,175 +1,197 @@
-/* ========== CSS GLOBAL ========== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* ==================== CSS VARIABLES ==================== */
+:root {
+    --color-neon-cyan: #00ffcc;
+    --color-neon-red: #ff3366;
+    --color-neon-green: #deff9a;
+    --color-dark-bg: #030303;
+    --color-zinc-950: #09090b;
+    --color-zinc-900: #18181b;
+    --color-zinc-800: #27272a;
 }
 
+/* ==================== GLOBAL STYLES ==================== */
 body {
     font-family: 'Inter', 'Orbitron', sans-serif;
-    background-color: #030303;
+    background-color: var(--color-dark-bg);
     height: 100vh;
     overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
-/* ========== TYPOGRAPHY ========== */
-.tech-mono { 
-    font-family: 'Share Tech Mono', 'Orbitron', monospace; 
+/* ==================== TYPOGRAPHY ==================== */
+.tech-mono {
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
 }
 
-/* ========== NEON EFFECTS ========== */
-.neon-glow-cyan { 
-    box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); 
-    border: 1px solid rgba(0, 255, 204, 0.4); 
+.neon-text-green {
+    color: var(--color-neon-green);
+    text-shadow: 0 0 10px rgba(222, 255, 154, 0.6);
 }
 
-.neon-glow-red { 
-    box-shadow: 0 0 20px rgba(255, 51, 102, 0.2); 
-    border: 1px solid rgba(255, 51, 102, 0.4); 
+.neon-text-red {
+    color: var(--color-neon-red);
+    text-shadow: 0 0 10px rgba(255, 51, 102, 0.6);
 }
 
-.neon-text-green { 
-    color: #deff9a; 
-    text-shadow: 0 0 10px rgba(222, 255, 154, 0.6); 
+.neon-text-cyan {
+    color: var(--color-neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
 }
 
-.neon-text-red { 
-    color: #ff3366; 
-    text-shadow: 0 0 10px rgba(255, 51, 102, 0.6); 
+/* ==================== NEON EFFECTS ==================== */
+.neon-glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+    border: 1px solid rgba(0, 255, 204, 0.4);
 }
 
-/* ========== PAGE NAVIGATION ========== */
-.page { 
-    display: none; 
-    height: 100%; 
-    flex-direction: column; 
+.neon-glow-red {
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.2);
+    border: 1px solid rgba(255, 51, 102, 0.4);
 }
 
-.page.active { 
-    display: flex; 
+/* ==================== PAGE MANAGEMENT ==================== */
+.page {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+    transition: all 0.3s ease-in-out;
 }
 
-/* ========== FORM ELEMENTS ========== */
-input, textarea, select {
+.page.active {
+    display: flex;
+}
+
+/* ==================== FORM INPUTS ==================== */
+input,
+textarea,
+select {
     background: rgba(15, 15, 15, 0.9) !important;
     border: 1px solid #333 !important;
-    color: #deff9a !important;
-    font-family: 'Share Tech Mono', monospace;
-    transition: all 0.3s ease;
+    color: var(--color-neon-green) !important;
+    font-family: inherit;
+    transition: all 0.2s ease !important;
 }
 
-input::placeholder, textarea::placeholder {
-    color: rgba(222, 255, 154, 0.5) !important;
+input::placeholder,
+textarea::placeholder {
+    color: #666 !important;
 }
 
-input:focus, textarea:focus, select:focus {
-    border-color: #00ffcc !important; 
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--color-neon-cyan) !important;
     outline: none;
     box-shadow: 0 0 10px rgba(0, 255, 204, 0.5) !important;
-    background: rgba(0, 255, 204, 0.05) !important;
 }
 
-option { 
-    background-color: #111; 
-    color: #00ffcc; 
+option {
+    background-color: var(--color-zinc-900);
+    color: var(--color-neon-cyan);
 }
 
-/* ========== CANVAS ========== */
-canvas { 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    z-index: 0; 
-    pointer-events: none; 
+/* ==================== CANVAS ==================== */
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
 }
 
-/* ========== PROGRESS BAR ========== */
-.progress-bar-container { 
-    width: 100%; 
-    background-color: #1a1a1a; 
-    border-radius: 10px; 
-    overflow: hidden; 
-    height: 8px; 
-    margin-top: 8px; 
-    border: 1px solid rgba(0, 255, 204, 0.2);
+/* ==================== PROGRESS BAR ==================== */
+.progress-bar-container {
+    width: 100%;
+    background-color: #1a1a1a;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 8px;
+    margin-top: 8px;
 }
 
-.progress-bar { 
-    height: 100%; 
-    width: 0%; 
-    background: linear-gradient(90deg, #00ffcc, #ff3366); 
-    transition: width 1.5s ease-out; 
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-neon-cyan), var(--color-neon-red));
+    transition: width 1.5s ease-out;
 }
 
-/* ========== BUTTONS ========== */
-button {
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-}
-
-button:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* ========== SCROLLBAR ========== */
+/* ==================== SCROLLBAR STYLING ==================== */
 ::-webkit-scrollbar {
     width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
     background: rgba(0, 255, 204, 0.3);
-    border-radius: 3px;
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 255, 204, 0.6);
+    background: rgba(0, 255, 204, 0.5);
 }
 
-/* ========== ANIMATIONS ========== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes pulse-glow {
+/* ==================== ANIMATIONS ==================== */
+@keyframes pulse-neon {
     0%, 100% {
-        box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+        opacity: 1;
     }
     50% {
-        box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
+        opacity: 0.7;
     }
 }
 
-/* ========== RESPONSIVE ========== */
-@media (max-width: 768px) {
+@keyframes glow-pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 204, 0.4);
+    }
+}
+
+.animate-pulse {
+    animation: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ==================== BUTTON STYLES ==================== */
+button {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 640px) {
     body {
-        padding: 0;
+        font-size: 14px;
     }
-    
+
     .page {
-        padding: 1rem;
+        height: 100vh;
     }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
 }

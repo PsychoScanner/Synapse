@@ -1,119 +1,59 @@
-/**
- * MindObserver Pro - Application Logic
- * ===================================
- * Secure version with input validation, password hashing, and error handling
- */
+// ==================== CONFIGURATION ====================
+const CONFIG = {
+    STORAGE_KEY: 'mind_observer_v4',
+    CANVAS_DOT_COUNT: 40,
+    CANVAS_DOT_SIZE: 1.5,
+    CANVAS_CONNECTION_DISTANCE: 130,
+    FORENSICS_DECEPTION_MIN: 65,
+    FORENSICS_DECEPTION_MAX: 98,
+    FORENSICS_POINTS_BASE: 50,
+    MENTOR_POINTS_BASE: 75,
+    MIN_PASSWORD_LENGTH: 6,
+};
 
+// ==================== STATE ====================
 let currentAgentEmail = null;
-
-// ===== 1. SECURITY FUNCTIONS =====
-
-/**
- * تنظيف المدخلات من XSS attacks
- * @param {string} input - المدخل المراد تنظيفه
- * @returns {string} - المدخل المنظف
- */
-function sanitizeInput(input) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return input.replace(/[&<>"']/g, m => map[m]);
-}
-
-/**
- * التحقق من صحة البريد الإلكتروني
- * @param {string} email - البريد المراد التحقق منه
- * @returns {boolean} - صحيح أو خاطئ
- */
-function isValidEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email) && email.length <= 254;
-}
-
-/**
- * التحقق من قوة كلمة المرور
- * @param {string} password - كلمة المرور
- * @returns {boolean} - قوية أم لا
- */
-function validatePassword(password) {
-    return password.length >= 6;
-}
-
-/**
- * تجزئة بسيطة للكلمات المرورية (للتعليم فقط)
- * للإنتاج: استخدم bcrypt
- * @param {string} password - كلمة المرور
- * @returns {string} - الكلمة المجزأة
- */
-function simpleHash(password) {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-        const char = password.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-}
-
-/**
- * عرض رسالة خطأ
- * @param {string} elementId - معرف العنصر
- * @param {string} message - الرسالة
- */
-function showError(elementId, message) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = message;
-        element.classList.remove('hidden');
-    }
-}
-
-/**
- * إخفاء رسالة الخطأ
- * @param {string} elementId - معرف العنصر
- */
-function hideError(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.classList.add('hidden');
-    }
-}
-
-// ===== 2. CANVAS BACKGROUND =====
-
-const canvas = document.getElementById('latticeCanvas');
-const ctx = canvas.getContext('2d');
+let canvasAnimationId = null;
 let dots = [];
 
-/**
- * تهيئة Canvas بحجم النافذة
- */
-function initCanvas() {
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+    initializeCanvas();
+    setupEventListeners();
+    drawLattice();
+});
+
+// ==================== CANVAS ANIMATION ====================
+function initializeCanvas() {
+    const canvas = document.getElementById('latticeCanvas');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    
     dots = [];
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < CONFIG.CANVAS_DOT_COUNT; i++) {
         dots.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
             vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5
+            vy: (Math.random() - 0.5) * 0.5,
         });
     }
+    
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 }
 
-/**
- * رسم شبكة الخلفية المتحركة
- */
 function drawLattice() {
+    const canvas = document.getElementById('latticeCanvas');
+    const ctx = canvas.getContext('2d');
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "rgba(0, 255, 204, 0.25)";
     ctx.strokeStyle = "rgba(0, 255, 204, 0.04)";
     
+    // Draw dots
     dots.forEach(dot => {
         dot.x += dot.vx;
         dot.y += dot.vy;
@@ -122,13 +62,15 @@ function drawLattice() {
         if (dot.y < 0 || dot.y > canvas.height) dot.vy *= -1;
         
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 1.5, 0, Math.PI * 2);
+        ctx.arc(dot.x, dot.y, CONFIG.CANVAS_DOT_SIZE, 0, Math.PI * 2);
         ctx.fill();
     });
     
+    // Draw connections
     for (let i = 0; i < dots.length; i++) {
         for (let j = i + 1; j < dots.length; j++) {
-            if (Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y) < 130) {
+            const distance = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
+            if (distance < CONFIG.CANVAS_CONNECTION_DISTANCE) {
                 ctx.beginPath();
                 ctx.moveTo(dots[i].x, dots[i].y);
                 ctx.lineTo(dots[j].x, dots[j].y);
@@ -136,120 +78,123 @@ function drawLattice() {
             }
         }
     }
+    
     requestAnimationFrame(drawLattice);
 }
 
-window.addEventListener('resize', initCanvas);
-initCanvas();
-drawLattice();
-
-// ===== 3. NAVIGATION FUNCTIONS =====
-
-/**
- * عرض صفحة معينة
- * @param {string} id - معرف الصفحة
- */
-function showPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+// ==================== EVENT LISTENERS ====================
+function setupEventListeners() {
+    // Navigation
+    document.querySelectorAll('[data-nav-register]').forEach(el => {
+        el.addEventListener('click', () => showPage('page-register'));
+    });
+    document.querySelectorAll('[data-nav-login]').forEach(el => {
+        el.addEventListener('click', () => showPage('page-login'));
+    });
+    document.querySelectorAll('[data-nav-dashboard]').forEach(el => {
+        el.addEventListener('click', () => showPage('page-dashboard'));
+    });
+    
+    // Authentication
+    const loginBtn = document.querySelector('[data-action="login"]');
+    const registerBtn = document.querySelector('[data-action="register"]');
+    const logoutBtn = document.querySelector('[data-action="logout"]');
+    
+    if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+    if (registerBtn) registerBtn.addEventListener('click', handleRegistration);
+    if (logoutBtn) logoutBtn.addEventListener('click', logoutAgent);
+    
+    // Dashboard
+    const forensicsBtn = document.querySelector('[data-action="show-forensics"]');
+    const mentorBtn = document.querySelector('[data-action="show-mentor"]');
+    
+    if (forensicsBtn) forensicsBtn.addEventListener('click', () => showPage('page-forensics'));
+    if (mentorBtn) mentorBtn.addEventListener('click', () => showPage('page-mentor'));
+    
+    // Forensics
+    const dataTypeSelect = document.getElementById('data-type');
+    const analyzeBtn = document.querySelector('[data-action="analyze"]');
+    const clearForensicsBtn = document.querySelector('[data-action="clear-forensics"]');
+    
+    if (dataTypeSelect) dataTypeSelect.addEventListener('change', toggleInputFields);
+    if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeDigitalData);
+    if (clearForensicsBtn) clearForensicsBtn.addEventListener('click', resetForensics);
+    
+    // Mentor
+    const submitMentorBtn = document.querySelector('[data-action="submit-mentor"]');
+    const retryMentorBtn = document.querySelector('[data-action="retry-mentor"]');
+    
+    if (submitMentorBtn) submitMentorBtn.addEventListener('click', submitToMentor);
+    if (retryMentorBtn) retryMentorBtn.addEventListener('click', resetMentor);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && e.target.id === 'login-pass') handleLogin();
+    });
 }
 
-// ===== 4. AUTHENTICATION FUNCTIONS =====
+// ==================== PAGE NAVIGATION ====================
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) targetPage.classList.add('active');
+}
 
-/**
- * معالجة التسجيل الجديد
- */
+// ==================== AUTHENTICATION ====================
 function handleRegistration() {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.toLowerCase().trim();
-    const pass = document.getElementById('reg-pass').value;
+    const name = document.getElementById('reg-name')?.value.trim();
+    const email = document.getElementById('reg-email')?.value.toLowerCase().trim();
+    const pass = document.getElementById('reg-pass')?.value;
+    const errorElement = document.getElementById('reg-error');
     
-    // التحقق من البيانات
-    if (!name) {
-        showError('reg-error', '❌ الاسم مطلوب');
+    if (!name || !email || !email.includes('@') || !pass || pass.length < CONFIG.MIN_PASSWORD_LENGTH) {
+        if (errorElement) errorElement.classList.remove('hidden');
         return;
     }
     
-    if (!isValidEmail(email)) {
-        showError('reg-error', '❌ البريد غير صحيح');
-        return;
-    }
+    if (errorElement) errorElement.classList.add('hidden');
     
-    if (!validatePassword(pass)) {
-        showError('reg-error', '❌ كلمة المرور: 6 أحرف على الأقل');
-        return;
-    }
+    let db = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || {};
     
-    // التحقق من وجود الحساب
-    let db = JSON.parse(localStorage.getItem('mind_observer_v4')) || {};
     if (db[email]) {
-        showError('reg-error', '❌ الحساب موجود بالفعل');
+        alert("⚠️ Agent already exists. Choose a different email.");
         return;
     }
     
-    // حفظ الحساب
-    const hashedPassword = simpleHash(pass);
-    db[email] = {
-        name: sanitizeInput(name),
-        pass: hashedPassword,
-        score: 0,
-        createdAt: new Date().toISOString()
-    };
+    db[email] = { name: sanitizeInput(name), pass: pass, score: 0 };
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(db));
     
-    localStorage.setItem('mind_observer_v4', JSON.stringify(db));
-    hideError('reg-error');
-    
-    // إعادة توجيه للدخول
+    // Clear form
     document.getElementById('login-email').value = email;
-    document.getElementById('login-pass').value = '';
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-pass').value = '';
+    
     showPage('page-login');
 }
 
-/**
- * معالجة الدخول
- */
 function handleLogin() {
-    const email = document.getElementById('login-email').value.toLowerCase().trim();
-    const pass = document.getElementById('login-pass').value;
+    const email = document.getElementById('login-email')?.value.toLowerCase().trim();
+    const pass = document.getElementById('login-pass')?.value;
+    const errorElement = document.getElementById('login-error');
     
     if (!email || !pass) {
-        showError('login-error', '❌ أدخل البريد وكلمة المرور');
+        if (errorElement) errorElement.classList.remove('hidden');
         return;
     }
     
-    let db = JSON.parse(localStorage.getItem('mind_observer_v4')) || {};
+    let db = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || {};
     
-    if (!db[email]) {
-        showError('login-error', '❌ الحساب غير موجود');
-        return;
+    if (db[email] && db[email].pass === pass) {
+        if (errorElement) errorElement.classList.add('hidden');
+        currentAgentEmail = email;
+        updateDashboardData();
+        showPage('page-dashboard');
+    } else {
+        if (errorElement) errorElement.classList.remove('hidden');
     }
-    
-    const hashedPassword = simpleHash(pass);
-    if (db[email].pass !== hashedPassword) {
-        showError('login-error', '❌ كلمة المرور خاطئة');
-        return;
-    }
-    
-    hideError('login-error');
-    currentAgentEmail = email;
-    updateDashboardData();
-    showPage('page-dashboard');
 }
 
-/**
- * تحديث بيانات لوحة التحكم
- */
-function updateDashboardData() {
-    let db = JSON.parse(localStorage.getItem('mind_observer_v4'));
-    const agent = db[currentAgentEmail];
-    
-    document.getElementById('agent-name').innerText = agent.name.toUpperCase();
-    document.getElementById('score-val').innerText = "النقاط: " + agent.score;
-}
-
-/**
- * تسجيل الخروج
- */
 function logoutAgent() {
     currentAgentEmail = null;
     document.getElementById('login-email').value = '';
@@ -257,145 +202,186 @@ function logoutAgent() {
     showPage('page-login');
 }
 
-// ===== 5. DIGITAL FORENSICS FUNCTIONS =====
+function updateDashboardData() {
+    const db = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
+    if (!db || !db[currentAgentEmail]) return;
+    
+    const agent = db[currentAgentEmail];
+    const agentNameEl = document.getElementById('agent-name');
+    const scoreValEl = document.getElementById('score-val');
+    
+    if (agentNameEl) agentNameEl.innerText = sanitizeInput(agent.name).toUpperCase();
+    if (scoreValEl) scoreValEl.innerText = "SCORE: " + agent.score;
+}
 
-/**
- * إظهار/إخفاء حقول الإدخال بناءً على نوع البيانات
- */
+// ==================== DIGITAL FORENSICS ====================
 function toggleInputFields() {
-    const dataType = document.getElementById('data-type').value;
+    const dataType = document.getElementById('data-type')?.value;
+    const textArea = document.getElementById('text-input-area');
+    const imageArea = document.getElementById('image-input-area');
     
     if (dataType === 'image') {
-        document.getElementById('text-input-area').classList.add('hidden');
-        document.getElementById('image-input-area').classList.remove('hidden');
+        if (textArea) textArea.classList.add('hidden');
+        if (imageArea) imageArea.classList.remove('hidden');
     } else {
-        document.getElementById('text-input-area').classList.remove('hidden');
-        document.getElementById('image-input-area').classList.add('hidden');
+        if (textArea) textArea.classList.remove('hidden');
+        if (imageArea) imageArea.classList.add('hidden');
     }
 }
 
-/**
- * إعادة تعيين نموذج الطب الشرعي
- */
-function resetForensics() {
-    document.getElementById('forensic-text').value = '';
-    document.getElementById('forensic-result-box').classList.add('hidden');
-    document.getElementById('analyze-data-btn').classList.remove('hidden');
-    document.getElementById('progress-bar-fill').style.width = '0%';
-    document.getElementById('percentage-text').innerText = '0%';
-}
-
-/**
- * تحليل البيانات الرقمية
- */
 function analyzeDigitalData() {
-    const dataType = document.getElementById('data-type').value;
-    const data = document.getElementById('forensic-text').value.trim();
+    const textInput = document.getElementById('forensic-text')?.value.trim();
     
-    if (!data) {
-        showError('login-error', '❌ أدرج البيانات للتحليل');
+    if (!textInput) {
+        alert("❌ Please provide evidence to analyze.");
         return;
     }
     
-    const btn = document.getElementById('analyze-data-btn');
-    btn.disabled = true;
-    btn.innerText = 'جاري الفحص...';
-    
-    setTimeout(() => {
-        btn.classList.add('hidden');
-        
-        // محاكاة النتيجة (عشوائية)
-        let percent = Math.floor(Math.random() * 34) + 65;
-        let points = Math.floor(percent / 10);
-        
-        document.getElementById('percentage-text').innerText = percent + '%';
-        document.getElementById('progress-bar-fill').style.width = percent + '%';
-        
-        // رسالة التحليل
-        const reports = {
-            chat: `تم تحليل الرسالة: ${data.length} حرف. مستوى الثقة: ${percent}%`,
-            email: `تم فحص البريد الإلكتروني. درجة المصداقية: ${percent}%`,
-            image: `تم تحليل الصورة. معدل التطابق: ${percent}%`
-        };
-        
-        document.getElementById('forensic-report').innerText = reports[dataType] || 'تم التحليل بنجاح';
-        document.getElementById('forensic-points').innerText = '+' + points + ' نقاط';
-        
-        // تحديث النقاط
-        updateScore(points);
-        
-        document.getElementById('forensic-result-box').classList.remove('hidden');
-    }, 2000);
-}
-
-// ===== 6. MENTOR FUNCTIONS =====
-
-/**
- * إعادة تعيين نموذج المستشار
- */
-function resetMentor() {
-    document.getElementById('mentor-input').value = '';
-    document.getElementById('mentor-result-box').classList.add('hidden');
-    document.getElementById('mentor-btn').classList.remove('hidden');
-}
-
-/**
- * إرسال التحليل للمستشار
- */
-function submitToMentor() {
-    const input = document.getElementById('mentor-input').value.trim();
-    
-    if (!input) {
-        showError('login-error', '❌ أدرج التحليل');
-        return;
+    const btn = document.querySelector('[data-action="analyze"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Scanning...";
     }
     
-    const btn = document.getElementById('mentor-btn');
-    btn.disabled = true;
-    btn.innerText = 'جاري التقييم...';
-    
+    // Simulate scanning delay
     setTimeout(() => {
-        btn.classList.add('hidden');
+        const deceptionRate = Math.floor(Math.random() * (CONFIG.FORENSICS_DECEPTION_MAX - CONFIG.FORENSICS_DECEPTION_MIN + 1)) + CONFIG.FORENSICS_DECEPTION_MIN;
+        const points = CONFIG.FORENSICS_POINTS_BASE + Math.floor(deceptionRate / 10);
         
-        let points = Math.floor(Math.random() * 20) + 5;
+        displayForensicsResult(deceptionRate, points, textInput);
+        updateAgentScore(points);
         
-        const verdicts = [
-            'تحليل ضعيف. تحتاج لممارسة أكثر.',
-            'مقبول، لكن هناك نقاط للتحسين.',
-            'جيد، لديك فهم أساسي.',
-            'ممتاز! تحليل عميق وحسن التنظيم.',
-            'متوسط. ركز على التفاصيل الأساسية.'
-        ];
-        
-        const verdict = verdicts[Math.floor(Math.random() * verdicts.length)];
-        
-        document.getElementById('mentor-verdict-text').innerText = verdict;
-        document.getElementById('mentor-points').innerText = '+' + points + ' نقاط';
-        
-        updateScore(points);
-        
-        document.getElementById('mentor-result-box').classList.remove('hidden');
+        if (btn) btn.classList.add('hidden');
     }, 1500);
 }
 
-// ===== 7. SCORING SYSTEM =====
-
-/**
- * تحديث النقاط للعميل الحالي
- * @param {number} points - النقاط المراد إضافتها
- */
-function updateScore(points) {
-    if (!currentAgentEmail) return;
+function displayForensicsResult(deceptionRate, points, evidence) {
+    const resultBox = document.getElementById('forensic-result-box');
+    const percentageText = document.getElementById('percentage-text');
+    const progressBar = document.getElementById('progress-bar-fill');
+    const reportText = document.getElementById('forensic-report');
+    const pointsText = document.getElementById('forensic-points');
     
-    let db = JSON.parse(localStorage.getItem('mind_observer_v4')) || {};
-    db[currentAgentEmail].score += points;
-    localStorage.setItem('mind_observer_v4', JSON.stringify(db));
+    if (percentageText) percentageText.innerText = deceptionRate + '%';
+    if (progressBar) progressBar.style.width = deceptionRate + '%';
+    if (pointsText) pointsText.innerText = '+' + points + ' PTS';
     
-    document.getElementById('score-val').innerText = "النقاط: " + db[currentAgentEmail].score;
+    const report = generateForensicsReport(deceptionRate, evidence);
+    if (reportText) reportText.innerText = report;
+    
+    if (resultBox) resultBox.classList.remove('hidden');
 }
 
-// ===== 8. EVENT LISTENERS =====
+function generateForensicsReport(deceptionRate, evidence) {
+    const deceptionLevel = deceptionRate > 85 ? 'CRITICAL' : deceptionRate > 70 ? 'HIGH' : deceptionRate > 55 ? 'MODERATE' : 'LOW';
+    const wordCount = evidence.split(/\s+/).length;
+    const emotionIndicators = evidence.match(/\b(love|hate|angry|happy|sad|scared)\b/gi) || [];
+    
+    return `FORENSICS ANALYSIS REPORT\n\nText Length: ${wordCount} words\nDeception Level: ${deceptionLevel}\nEmotional Markers: ${emotionIndicators.length} detected\n\nThe subject demonstrates ${deceptionLevel} probability of deception based on linguistic patterns, emotional indicators, and semantic analysis. Recommend further investigation.`;
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ MindObserver Pro - تم تحميل التطبيق بنجاح');
-});
+function resetForensics() {
+    const textInput = document.getElementById('forensic-text');
+    const resultBox = document.getElementById('forensic-result-box');
+    const analyzeBtn = document.querySelector('[data-action="analyze"]');
+    const progressBar = document.getElementById('progress-bar-fill');
+    const percentageText = document.getElementById('percentage-text');
+    
+    if (textInput) textInput.value = '';
+    if (resultBox) resultBox.classList.add('hidden');
+    if (analyzeBtn) {
+        analyzeBtn.classList.remove('hidden');
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerText = 'Initiate Scan';
+    }
+    if (progressBar) progressBar.style.width = '0%';
+    if (percentageText) percentageText.innerText = '0%';
+}
+
+// ==================== RUTHLESS MENTOR ====================
+function submitToMentor() {
+    const input = document.getElementById('mentor-input')?.value.trim();
+    
+    if (!input) {
+        alert("❌ You must provide an analysis before submitting.");
+        return;
+    }
+    
+    const btn = document.querySelector('[data-action="submit-mentor"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Evaluating...";
+    }
+    
+    setTimeout(() => {
+        const verdict = generateMentorVerdict(input);
+        const points = CONFIG.MENTOR_POINTS_BASE + Math.floor(Math.random() * 50);
+        
+        displayMentorResult(verdict, points);
+        updateAgentScore(points);
+        
+        if (btn) btn.classList.add('hidden');
+    }, 2000);
+}
+
+function generateMentorVerdict(analysis) {
+    const verdicts = [
+        "Your analysis is PEDESTRIAN. You've barely scratched the surface of psychological dynamics. The subject exhibits clear patterns of displacement and rationalization, yet you failed to identify the core defense mechanism at play. INADEQUATE.",
+        "MARGINALLY ACCEPTABLE. You identified some valid patterns, but your reasoning lacks depth. Psychology isn't surface-level observation—it requires understanding unconscious motivations. Your conclusion is 30% correct, 70% guesswork.",
+        "COMPETENT WORK. You grasped the primary psychological framework and demonstrated solid analytical thinking. However, you missed the secondary trauma responses and cultural conditioning factors. Room for improvement.",
+        "IMPRESSIVE. Your analysis demonstrates nuanced understanding of behavioral psychology. You identified both conscious and unconscious patterns with precision. The only weakness is your failure to consider neurobiological factors.",
+        "EXEMPLARY. This is the kind of analysis I expect. You demonstrated mastery of psychological theory while maintaining critical skepticism. Your reasoning was airtight and your conclusions were supported by evidence. Outstanding."
+    ];
+    
+    const qualityScore = Math.random();
+    let verdictIndex = Math.floor(qualityScore * verdicts.length);
+    if (verdictIndex >= verdicts.length) verdictIndex = verdicts.length - 1;
+    
+    return verdicts[verdictIndex];
+}
+
+function displayMentorResult(verdict, points) {
+    const resultBox = document.getElementById('mentor-result-box');
+    const verdictText = document.getElementById('mentor-verdict-text');
+    const pointsText = document.getElementById('mentor-points');
+    
+    if (verdictText) verdictText.innerText = verdict;
+    if (pointsText) pointsText.innerText = '+' + points + ' PTS';
+    
+    if (resultBox) resultBox.classList.remove('hidden');
+}
+
+function resetMentor() {
+    const input = document.getElementById('mentor-input');
+    const resultBox = document.getElementById('mentor-result-box');
+    const submitBtn = document.querySelector('[data-action="submit-mentor"]');
+    
+    if (input) input.value = '';
+    if (resultBox) resultBox.classList.add('hidden');
+    if (submitBtn) {
+        submitBtn.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Submit for Judgment';
+    }
+}
+
+// ==================== SCORING ====================
+function updateAgentScore(points) {
+    if (!currentAgentEmail) return;
+    
+    const db = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
+    if (!db || !db[currentAgentEmail]) return;
+    
+    db[currentAgentEmail].score += points;
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(db));
+    
+    updateDashboardData();
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+function sanitizeInput(input) {
+    if (!input) return '';
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
+}
